@@ -21,7 +21,6 @@ function init({ config }) {
         user: db.username,
         pass: db.password,
         useNewUrlParser: true,
-        readPreference: 'secondaryPreferred',
         useUnifiedTopology: true,
     };
 

@@ -28,7 +28,6 @@ const errorResponse = ({
       data,
       code,
       message,
-      debug,
     },
     code,
   );

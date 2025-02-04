@@ -1,5 +1,9 @@
 const app = require('restana')();
 
+const bodyParser = require('body-parser');
+const helmet = require('helmet');
+const compression = require('compression');
+
 const config = require('./development.config.json');
 const port = config.PORT;
 const {
@@ -10,6 +14,17 @@ const { init: mongoInit } = require('./mongodb/index');
 
 const routes = require('./routes');
 const { validateAuth } = require('./middlewares/auth.middleware');
+
+// parse body params and attache them to req.body
+app.use(bodyParser.json());
+
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// secure apps by setting various HTTP headers
+app.use(helmet());
+
+// gzip, deflate compression of API response to reduce data transfer over internet
+app.use(compression());
 
 app.use('/auth', validateAuth);
 app.use('/', routes);
