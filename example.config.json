@@ -1,0 +1,13 @@
+{
+    "PORT": 3009,
+    "mongoDB": {
+      "username": "",
+      "password": "",
+      "port": 27017,
+      "host": "",
+      "database": ""
+    },
+    "jwt": {
+      "secret": ""
+    }
+}
