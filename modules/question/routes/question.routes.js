@@ -3,6 +3,11 @@ const {
 } = require('../controllers/question.controller');
 
 module.exports = (router) => {
-    router.post('/question', addNewQuestion);
+    router.post(
+        '/auth/question',
+        // validateRole, // // not implemented
+        // validateInputParams, // not implemented
+        addNewQuestion,
+    );
 };
   

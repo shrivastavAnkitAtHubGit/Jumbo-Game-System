@@ -3,6 +3,8 @@ const mobileRegex = /^[0-9]*$/;
 const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 
 const DEFAULT_GAME_ID = '67a2fec28a875581a292f7a4';
+const DEFAULT_GAME_USER_LIMIT = 2;
+const DEFAULT_GAME_QUESTION_LIMIT = 4;
 
 const SESSION_STATUS = {
     INITIATED: 'initiated',
@@ -17,4 +19,6 @@ module.exports = {
     emailRegex,
     SESSION_STATUS,
     DEFAULT_GAME_ID,
+    DEFAULT_GAME_USER_LIMIT,
+    DEFAULT_GAME_QUESTION_LIMIT,
 };

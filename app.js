@@ -17,6 +17,9 @@ const {
     markUserAvailable,
     markUserUnavailable,
 } = require('./modules/user/helpers/user.helper');
+const {
+    processAndSaveAttemptData,
+} = require('./modules/session/controllers/session.controller');
 
 const app = restana();
 const server = createServer(app);
@@ -69,14 +72,10 @@ io.on("connection", (socket) => {
     });
 
     socket.on("answerSubmit", async (attemptData) => {
-        // validateAttemptData(attemptData);
-        const { event = '', users = [], eventMsg = '', eventData = {} } = await processAndSaveAttemptData(attemptData);
-        users.forEach(({ _id: userId }) => {
-            io.to(userId.toString()).emit(event, eventMsg, eventData);
-        });
+        await processAndSaveAttemptData(attemptData);
     });
 
-    socket.on("disconnect", async () => {
+    socket.on("disconnect", async ({ userId }) => {
         await markUserUnavailable({ userId });
         console.log("Client disconnected:", socket.id);
     });

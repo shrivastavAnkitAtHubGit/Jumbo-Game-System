@@ -27,7 +27,6 @@ async function userAccoutCreation({ name, email, mobile, password }) {
         isAvailable: false,
     });
     if (mobile) {
-        // console.log(mobile);
         userObj.mobile = mobile;
     }
     await userObj.save();

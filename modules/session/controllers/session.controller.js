@@ -1,7 +1,9 @@
+const { ObjectId } = require('mongoose').Types;
 const { errorResponse, successResponse } = require('../../../utils/response/response.handler');
 const { ERROR_MESSAGES, SUCCESS_MESSAGES } = require('../constants/session.constant');
 const { DEFAULT_GAME_ID } = require('../../../utils/constants');
-const { startGame } = require('../helpers/session.helper');
+const { startGame, processAndSaveUserAttemptData } = require('../helpers/session.helper');
+const { validateAttemptData } = require('../middlewares/session.middleware');
 
 async function startNewGame(req, res) {
     try {
@@ -23,6 +25,19 @@ async function startNewGame(req, res) {
     }
 }
 
+async function processAndSaveAttemptData(attemptData) {
+    const { userId } = attemptData;
+    try {
+        await validateAttemptData(attemptData);
+        await processAndSaveUserAttemptData(attemptData);
+        return ;
+    } catch (error) {
+        global.io.to(userId.toString()).emit("error", error);
+        return;
+    }
+}
+
 module.exports = {
     startNewGame,
+    processAndSaveAttemptData,
 };

@@ -14,7 +14,6 @@ async function createUserAccount(req, res) {
         });
 
     } catch(error) {
-        console.log(error);
         return errorResponse({
             res,
             error,
@@ -34,7 +33,6 @@ async function userLogin(req, res) {
             message: SUCCESS_MESSAGES.LOGIN,
         });  
     } catch(error) {
-        console.log(error);
         return errorResponse({
             res,
             error,

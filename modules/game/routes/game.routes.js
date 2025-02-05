@@ -3,6 +3,11 @@ const {
 } = require('../controllers/game.controller');
 
 module.exports = (router) => {
-    router.post('/game', addNewGame);
+    router.post(
+        '/auth/game',
+        // validateRole, // // not implemented
+        // validateInputParams, // not implemented
+        addNewGame,
+    );
 };
   

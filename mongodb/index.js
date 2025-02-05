@@ -2,27 +2,9 @@
 
 const mongoose = require('mongoose');
 
-function validateConfig(config) {
-    if (!config) {
-        throw new Error('Invalid initialization of mongodb module, no config');
-    }
-    if (!config.db || !config.db.host || !config.db.port || !config.db.database
-        || !config.db.username || !config.db.password) {
-        throw new Error('Invalid initialization of mongodb module, no db credentials');
-    }
-}
-
 function init({ config }) {
-    validateConfig(config);
     const { db } = config;
     const connectionUri = db.connectionUri;
-
-    const options = {
-        user: db.username,
-        pass: db.password,
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    };
 
     mongoose.Promise = global.Promise;
 
@@ -31,7 +13,7 @@ function init({ config }) {
         process.exit();
     });
 
-    mongoose.connect(connectionUri, options)
+    mongoose.connect(connectionUri)
         .then(() => {
             console.log('Successfully connected to db');
         })

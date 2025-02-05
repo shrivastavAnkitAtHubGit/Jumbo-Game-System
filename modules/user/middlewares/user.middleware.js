@@ -43,7 +43,6 @@ function validateName(name) {
 
 async function validateUserSignUpParams(req, res, next) {
     try {
-        console.log(req.body);
         const { name, mobile, email, password } = req.body;
         validateName(name);
         validatePassword(password);
@@ -58,7 +57,6 @@ async function validateUserSignUpParams(req, res, next) {
         }
         return next();
     } catch (error) {
-        console.log(error);
         return errorResponse({
             res,
             error,
@@ -74,7 +72,6 @@ function validateUserLoginParams(req, res, next) {
         validateEmail(email);
         return next();
     } catch (error) {
-        console.log(error);
         return errorResponse({
             res,
             error,
