@@ -1,6 +1,7 @@
 const { UserModel, SessionModel, GameModel, QuestionModel } = require("../../../mongodb/models");
 const { statusCodes } = require('../../../utils/response/response.handler');
 const { SESSION_STATUS } = require('../../../utils/constants');
+// const { io } = require('../../../app');
 
 async function checkAndUpdateUserAvailability({ userId }) {
     const findQuery = {
@@ -144,6 +145,7 @@ async function activateUser({ userId }) {
 }
 
 async function startGame({ userId, gameId }) {
+    userId = userId.toString();
     const [
         currUserAvailableData,
         otherUserAvailableData,
@@ -153,34 +155,41 @@ async function startGame({ userId, gameId }) {
     ]);
     try {
         if (!(currUserAvailableData && currUserAvailableData.isAvailable) || !(otherUserAvailableData && otherUserAvailableData.isAvailable)) {
-            // reactivate users
             throw {
                 code: statusCodes.STATUS_CODE_VALIDATION_FAILED,
                 message: 'User not availble for the game',
             };
         }
+        const opponendUserId = otherUserAvailableData._id.toString();
         const sessionId = await createNewSession({
             gameId,
             users: [
-                { id: currUserAvailableData._id, name: currUserAvailableData.name },
-                { id: otherUserAvailableData._id, name: otherUserAvailableData.name },
+                { id: userId, name: currUserAvailableData.name },
+                { id: opponendUserId, name: otherUserAvailableData.name },
             ]
         });
-        /// emit game initiated event
-        const { isGameEnded, questionData, gameResultData } = await fetchNextQuestion({ sessionId });
-        if (!isGameEnded) {
-            // emit question data event
-        }
-        return { isGameEnded, questionData, gameResultData };
+        const { questionData } = await fetchNextQuestion({ sessionId });
+        // Notify both players
+        global.io.to(userId).emit("gameInit", `Cheers !! Your game started. Opponent: ${otherUserAvailableData.name}`, { sessionId });
+        global.io.to(opponendUserId).emit("gameInit", `Cheers !! Your game started. Opponent: ${currUserAvailableData.name}`, { sessionId });
+        // Send questions
+        global.io.to(userId).to(opponendUserId).emit("questionSend", questionData);
+        return {
+            sessionId,
+            isMatchFound: true,
+            questionData,
+            currUser: currUserAvailableData,
+            opponentUser: otherUserAvailableData,
+        };
     } catch (error) {
         await Promise.all([
             currUserAvailableData && activateUser({ userId: currUserAvailableData._id }),
             otherUserAvailableData && activateUser({ userId: otherUserAvailableData._id }),
         ]);
         throw {
-            code: error.code || statusCodes.STATUS_CODE_VALIDATION_FAILED,
-            message: error.message || 'Failed to start game',
-        };
+            code: error.code || statusCodes.STATUS_CODE_FAILURE,
+            message: error.message || 'Failed to create new game',
+        }
     }
 }
 

@@ -1,34 +1,45 @@
-const app = require('restana')();
-
+const restana = require('restana');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 const bodyParser = require('body-parser');
 const helmet = require('helmet');
 const compression = require('compression');
 
 const config = require('./development.config.json');
-const port = config.PORT;
+const { init: mongoInit } = require('./mongodb/index');
+const routes = require('./routes');
+const { validateAuth } = require('./middlewares/auth.middleware');
 const {
     errorResponse,
     statusCodes: { STATUS_CODE_FAILURE, STATUS_CODE_DATA_NOT_FOUND },
 } = require('./utils/response/response.handler');
-const { init: mongoInit } = require('./mongodb/index');
+const {
+    markUserAvailable,
+    markUserUnavailable,
+} = require('./modules/user/helpers/user.helper');
 
-const routes = require('./routes');
-const { validateAuth } = require('./middlewares/auth.middleware');
+const app = restana();
+const server = createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: "*",  // Allow all origins (modify for production)
+        methods: ["GET", "POST"]
+    }
+});
 
-// parse body params and attache them to req.body
+global.io = io;
+
+// Middleware setup
 app.use(bodyParser.json());
-
 app.use(bodyParser.urlencoded({ extended: true }));
-
-// secure apps by setting various HTTP headers
 app.use(helmet());
-
-// gzip, deflate compression of API response to reduce data transfer over internet
 app.use(compression());
 
+// Routes
 app.use('/auth', validateAuth);
 app.use('/', routes);
 
+// Handle invalid routes
 app.use((req, res, next) => errorResponse({
     code: STATUS_CODE_DATA_NOT_FOUND,
     req,
@@ -36,6 +47,7 @@ app.use((req, res, next) => errorResponse({
     message: 'Route not found',
 }));
 
+// Global error handler
 app.use((error, req, res, next) => errorResponse({
     code: STATUS_CODE_FAILURE,
     req,
@@ -44,13 +56,38 @@ app.use((error, req, res, next) => errorResponse({
     message: error.message,
 }));
 
-const server = app.start(port);
-
-server
-    .then(() => {
-        mongoInit({ config: { db: config.mongoDB } });
-        console.log(`Server started at port ${port}`);
-    })
-    .catch((err) => {
-        console.log('Failed to start server ', err);
+// WebSocket connection handling
+io.on("connection", (socket) => {
+    socket.emit("message", "You are connected");
+    socket.on("joinGame", async ({ userId }) => {
+        if (!userId) {
+            socket.emit("error", "Invalid request: Missing userId or gameId");
+            return;
+        }
+        socket.join(userId);
+        await markUserAvailable({ userId });
     });
+
+    socket.on("answerSubmit", async (attemptData) => {
+        // validateAttemptData(attemptData);
+        const { event = '', users = [], eventMsg = '', eventData = {} } = await processAndSaveAttemptData(attemptData);
+        users.forEach(({ _id: userId }) => {
+            io.to(userId.toString()).emit(event, eventMsg, eventData);
+        });
+    });
+
+    socket.on("disconnect", async () => {
+        await markUserUnavailable({ userId });
+        console.log("Client disconnected:", socket.id);
+    });
+});
+
+// Start server after MongoDB initializes
+server.listen(config.PORT, async () => {
+    try {
+        await mongoInit({ config: { db: config.mongoDB } });
+        console.log(`Server started at port ${config.PORT}`);
+    } catch (err) {
+        console.error("Failed to start server:", err);
+    }
+});

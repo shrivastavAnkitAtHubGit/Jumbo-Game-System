@@ -58,7 +58,6 @@ async function updateUser({ userId, token }) {
     };
     const updateQuery = {
         $set: {
-            isAvailable: true,
             token,
         }
     };
@@ -98,8 +97,18 @@ async function loginUser({ email, password }) {
     return { token };
 }
 
+async function markUserAvailable({ userId }) {
+    await UserModel.updateOne({ _id: userId }, { $set: { isAvailable: true } });
+}
+
+async function markUserUnavailable({ userId }) {
+    await UserModel.updateOne({ _id: userId }, { $set: { isAvailable: false } });
+}
+
 module.exports = {
     userAccoutCreation,
     loginUser,
     isUserAlreadyExists,
+    markUserAvailable,
+    markUserUnavailable,
 }
