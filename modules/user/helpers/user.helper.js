@@ -9,10 +9,12 @@ const { ERROR_MESSAGES } = require('../constants/user.constant');
 async function isUserAlreadyExists({ email, mobile }) {
     const findQuery = {
         $or: [
-            { mobile },
             { email },
         ]
     };
+    if (mobile) {
+        findQuery.$or.push({mobile});
+    }
     const isUserExist = await UserModel.countDocuments(findQuery);
     return isUserExist;
 }
@@ -21,10 +23,13 @@ async function userAccoutCreation({ name, email, mobile, password }) {
     const userObj = new UserModel({
         name,
         email,
-        mobile,
         password,
-        isAvailable: true,
+        isAvailable: false,
     });
+    if (mobile) {
+        // console.log(mobile);
+        userObj.mobile = mobile;
+    }
     await userObj.save();
 }
 
@@ -47,6 +52,19 @@ function generateToken(userData) {
     return token;
 };
 
+async function updateUser({ userId, token }) {
+    const findQuery = {
+        _id: userId,
+    };
+    const updateQuery = {
+        $set: {
+            isAvailable: true,
+            token,
+        }
+    };
+    await UserModel.updateOne(findQuery, updateQuery);
+}
+
 async function loginUser({ email, password }) {
     const findQuery = {
         email,
@@ -56,6 +74,7 @@ async function loginUser({ email, password }) {
         name: 1,
         mobile: 1,
         password: 1,
+        token: 1,
     };
     const userData = await UserModel.findOne(findQuery, projectQuery);
     if (!userData) {
@@ -71,7 +90,11 @@ async function loginUser({ email, password }) {
             message: ERROR_MESSAGES.INCORRECT_PASSWORD,
         }
     }
+    if (userData.token) {
+        return { token: userData.token };
+    }
     const token = generateToken(userData);
+    await updateUser({ userId: userData, token });
     return { token };
 }
 

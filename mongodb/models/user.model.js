@@ -10,7 +10,7 @@ const { Schema } = mongoose;
 const UserSchema = new Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  mobile: { type: String, unique: true },
+  mobile: { type: String, defalt: '' },
   password: { type: String, required: true },
   token: { type: String, default: '' },
   isAvailable: { type: Boolean },

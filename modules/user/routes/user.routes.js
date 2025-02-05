@@ -9,7 +9,7 @@ const {
 } = require('../middlewares/user.middleware');
 
 module.exports = (router) => {
-    router.post('/user', validateUserSignUpParams, createUserAccount);
+    router.post('/user/register', validateUserSignUpParams, createUserAccount);
     router.post('/user/login', validateUserLoginParams, userLogin);
 };
   
